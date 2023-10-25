@@ -5,6 +5,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
@@ -19,11 +22,12 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.*;
 
 public class Ventana extends JFrame{
+	private static final int COL_MUNICIPIO = 1;
+	
 	private JTable tabla;
 	private DefaultTableModel modeloTabla;
 	private JTree arbol;
 	private DefaultTreeModel modeloArbol;
-	private JPanel pnlTabla;
 	private JPanel pnlJTree;
 	private JPanel pnlVisualizacion;
 	private JPanel contentPanel;
@@ -38,38 +42,12 @@ public class Ventana extends JFrame{
 		contentPanel = new JPanel();
 		contentPanel.setLayout(new BorderLayout());
 		
-		pnlTabla = new JPanel();
-		pnlTabla.setLayout(new FlowLayout());
 		tabla = new JTable();
 		JScrollPane spTabla = new JScrollPane(tabla);
 		spTabla.setPreferredSize(new Dimension(700,600));
-		pnlTabla.add(spTabla);
-		contentPanel.add(pnlTabla, BorderLayout.CENTER);
+		contentPanel.add(spTabla, BorderLayout.CENTER);
 		
-		tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-			private static final long serialVersionUID = 1L;
-			private JProgressBar pb = new JProgressBar(50000, 5000000);
-			
-			@Override
-			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-					boolean hasFocus, int row, int column) {
-				
-				if (column == 3) {
-					int valor = Integer.parseInt(value.toString());
-					pb.setValue(valor);
-					int red;
-					int green = ((valor-50000)/4950000)*255;
-					Color colorValor = new Color(red, green, 0);
-					pb.setForeground(Color.red);
-					return pb;
-				}
-				Component comp =  super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-				return comp;
-			}
-			
-			
-		});
-		
+
 		pnlJTree = new JPanel();
 		pnlJTree.setLayout(new BorderLayout());
 		pnlJTree.setPreferredSize(new Dimension(200,595));
@@ -119,10 +97,12 @@ public class Ventana extends JFrame{
 			}
 		});
 		
+
+		
 		
 	}
 	
-	public void setDatosJTree(DataSetMunicipios datosMunis){
+	public void setDatosIniciales(DataSetMunicipios datosMunis){
 		this.datosMunis = datosMunis;
 		DefaultMutableTreeNode raiz = new DefaultMutableTreeNode("Municipios");
 		modeloArbol = new DefaultTreeModel(raiz);
@@ -144,7 +124,22 @@ public class Ventana extends JFrame{
 		}
 		arbol.setModel(modeloArbol);
 		
-		modeloTabla = new DefaultTableModel();
+		modeloTabla = new DefaultTableModel() {
+			private static final long serialVersionUID = 1L;
+
+//			Considero que los habitantes solo se podrá editar desde la columna de habitantes.
+			@Override
+			public boolean isCellEditable(int row, int column) {
+				// TODO Auto-generated method stub
+				if (column == 1 || column == 2) {
+					return true;
+				}else {
+					return false;
+				}
+			}
+			
+			
+		};
 		modeloTabla.addColumn("Código");
 		modeloTabla.addColumn("Municipio");
 		modeloTabla.addColumn("Habitantes");
@@ -153,6 +148,47 @@ public class Ventana extends JFrame{
 		modeloTabla.addColumn("Comunidad Autónoma");
 		
 		tabla.setModel(modeloTabla);
+		tabla.getTableHeader().setReorderingAllowed(false);
+		
+//		Listener Tabla
+		tabla.addMouseListener(new MouseAdapter() {
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				// TODO Auto-generated method stub
+				if (e.getButton() == MouseEvent.BUTTON3) {
+					int col = tabla.columnAtPoint(e.getPoint());
+					if (col == COL_MUNICIPIO) {
+						
+					}
+				}
+			}
+		});
+		
+		
+//		Renderer tabla
+		tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+			private static final long serialVersionUID = 1L;
+			private JProgressBar pb = new JProgressBar(50000, 5000000);
+			
+			@Override
+			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+					boolean hasFocus, int row, int column) {
+				
+				if (column == 3) {
+					int valor = Integer.parseInt(value.toString());
+					pb.setValue(valor);
+					int red = (int) (((valor-50000.0)/4950000)*255);
+					int green = (int) (255-((valor-50000.0)/4950000)*255);
+					Color colorValor = new Color(red, green, 0);
+					pb.setForeground(colorValor);
+					return pb;
+				}
+				Component comp =  super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+				return comp;
+			}
+		});
+		
 	}
 	
 	public void setDatosTabla(String Provincia) {

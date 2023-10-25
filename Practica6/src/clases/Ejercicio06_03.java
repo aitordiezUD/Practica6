@@ -42,7 +42,7 @@ public class Ejercicio06_03 {
 //			}
 			// TODO Resolver el ejercicio 6.3
 			vent = new Ventana( ventana);
-			vent.setDatosJTree( dataset );
+			vent.setDatosIniciales( dataset );
 			vent.setVisible( true );
 		} catch (IOException e) {
 			System.out.println(e.getStackTrace());
