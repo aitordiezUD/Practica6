@@ -23,6 +23,7 @@ import javax.swing.tree.*;
 
 public class Ventana extends JFrame{
 	private static final int COL_MUNICIPIO = 1;
+	private static final int COL_HABITANTES = 2;
 	
 	private JTable tabla;
 	private DefaultTableModel modeloTabla;
@@ -33,6 +34,13 @@ public class Ventana extends JFrame{
 	private JPanel contentPanel;
 	private JPanel pnlBtns;
 	private DataSetMunicipios datosMunis;
+	private HashMap<String,ArrayList<String>> mapaCCAAprovincias;
+	private HashMap<String,Municipio> mapaBusqudaMunis;
+	
+//	Atributos necesarios para el listener del click derecho
+	private String nMuniSel = "";
+	private Boolean clickDerecho = false;
+	private Municipio muniSel;
 	
 	public Ventana (JFrame ventanaOrigen) {
 		setSize(1200,700);
@@ -92,6 +100,10 @@ public class Ventana extends JFrame{
                 	Object provincia = arbol.getLastSelectedPathComponent();
                 	modeloTabla.setRowCount(0);
                 	setDatosTabla(provincia.toString());
+                	muniSel = null;
+                	nMuniSel = "";
+                	clickDerecho = false;
+                	tabla.repaint();
                 }
                 
 			}
@@ -104,20 +116,26 @@ public class Ventana extends JFrame{
 	
 	public void setDatosIniciales(DataSetMunicipios datosMunis){
 		this.datosMunis = datosMunis;
+		
+//		Creacion de los mapas de búsqueda
+		mapaBusqudaMunis = datosMunis.mapaBusquedaMunis();
+		mapaCCAAprovincias = datosMunis.mapaCCAAprovincias();
+		
+//		Crecion del modelo de JTree
 		DefaultMutableTreeNode raiz = new DefaultMutableTreeNode("Municipios");
 		modeloArbol = new DefaultTreeModel(raiz);
-		HashMap<String,ArrayList<String>> mapa = datosMunis.mapaCCAAprovincias();
 		int count = 0;
 		
 //		Para ordenar las claves por orden alfabético se usan las siguientes dos lineas:
-		ArrayList<String> listaClaves = new ArrayList<>(mapa.keySet());
+		ArrayList<String> listaClaves = new ArrayList<>(mapaCCAAprovincias.keySet());
 		Collections.sort(listaClaves);
 		
+//		Carga de los datos en el JTree
 		for (String autonomia:listaClaves) {
 			DefaultMutableTreeNode nodoAuto = new DefaultMutableTreeNode(autonomia);
 			modeloArbol.insertNodeInto(nodoAuto , raiz, count);
 			count++;
-			ArrayList<String> provincias = mapa.get(autonomia);
+			ArrayList<String> provincias = mapaCCAAprovincias.get(autonomia);
 			for (int i = 0; i<provincias.size(); i++) {
 				modeloArbol.insertNodeInto(new DefaultMutableTreeNode(provincias.get(i)) , nodoAuto, i);
 			}
@@ -158,9 +176,34 @@ public class Ventana extends JFrame{
 				// TODO Auto-generated method stub
 				if (e.getButton() == MouseEvent.BUTTON3) {
 					int col = tabla.columnAtPoint(e.getPoint());
-					if (col == COL_MUNICIPIO) {
-						
+					int fila = tabla.rowAtPoint(e.getPoint());
+					if (col == COL_MUNICIPIO && fila >= 0) {
+//						System.out.println("Columna: "+ col + "; Fila: " + fila);
+						String muni = (String) tabla.getValueAt(fila, col);
+//						System.out.println("Click derecho en col Municipio");
+						if (clickDerecho == false) {
+							nMuniSel = muni;
+//							System.out.println("Ciudad seleccionada: " + nMuniSel);
+							muniSel = mapaBusqudaMunis.get(muni);
+//							System.out.println("Municipio seleccionado: " + muniSel);
+							clickDerecho = true;
+						}else {
+							if (muni == nMuniSel) {
+								nMuniSel = "";
+								muniSel = null;
+								clickDerecho = false;
+//								System.out.println("Municipio sin seleccionar " + nMuniSel);
+							}else {
+								nMuniSel = muni;
+//								System.out.println("Ciudad seleccionada: " + nMuniSel);
+								muniSel = mapaBusqudaMunis.get(muni);
+//								System.out.println("Municipio seleccionado: " + muniSel);
+								clickDerecho = true;
+								
+							}
+						}
 					}
+					tabla.repaint();
 				}
 			}
 		});
@@ -174,6 +217,20 @@ public class Ventana extends JFrame{
 			@Override
 			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
 					boolean hasFocus, int row, int column) {
+				Component comp =  super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+				comp.setBackground(Color.WHITE);
+				if (column == 1) {
+					if (clickDerecho) {
+						if ( Integer.parseInt(table.getValueAt(row, COL_HABITANTES)+"") > muniSel.getHabitantes() ) {
+							comp.setBackground(Color.RED);
+						}else if (Integer.parseInt(table.getValueAt(row, COL_HABITANTES)+"") < muniSel.getHabitantes()){
+							comp.setBackground(Color.GREEN);
+						}
+					}else {
+						comp.setBackground(Color.WHITE);
+					}
+				}
+				
 				
 				if (column == 3) {
 					int valor = Integer.parseInt(value.toString());
@@ -184,7 +241,7 @@ public class Ventana extends JFrame{
 					pb.setForeground(colorValor);
 					return pb;
 				}
-				Component comp =  super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+				
 				return comp;
 			}
 		});
