@@ -11,7 +11,7 @@ public class Ejercicio06_03 {
 	
 	private static JFrame ventana;
 	private static DataSetMunicipios dataset;
-
+	
 	private static Ventana vent;
 	
 	public static void main(String[] args) {
@@ -36,10 +36,10 @@ public class Ejercicio06_03 {
 	private static void cargaMunicipios() {
 		try {
 			dataset = new DataSetMunicipios( "datasetMunicipios50k.csv" );
-//			System.out.println( "Cargados municipios:" );
-//			for (Municipio m : dataset.getMunicipios() ) {
-//				System.out.println( "\t" + m );
-//			}
+			System.out.println( "Cargados municipios:" );
+			for (Municipio m : dataset.getMunicipios() ) {
+				System.out.println( "\t" + m );
+			}
 			// TODO Resolver el ejercicio 6.3
 			vent = new Ventana( ventana);
 			vent.setDatosIniciales( dataset );

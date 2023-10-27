@@ -10,6 +10,8 @@ import java.util.HashMap;
 public class DataSetMunicipios {
 	
 	private ArrayList<Municipio> municipios = new ArrayList<Municipio>();
+	private int poblacionEstado = 0;
+	private static int cod = 1;
 	
 	public DataSetMunicipios( String nombreFichero ) throws IOException {
 		BufferedReader br = null;
@@ -23,12 +25,26 @@ public class DataSetMunicipios {
 				String[] campos = linea.split(";");
 				Municipio muni = new Municipio(Integer.parseInt(campos[0]), campos[1], Integer.parseInt(campos[2]), campos[3], campos[4]);
 				municipios.add(muni);
+				poblacionEstado = poblacionEstado + Integer.parseInt(campos[2]);
+				cod++;
 				linea = br.readLine();
 			}
 			
 		}catch (Exception e) {
 			System.out.println("Error cargando el DataSet");
 		}
+	}
+
+	public static int getCod() {
+		return cod;
+	}
+
+	public static void incCod() {
+		DataSetMunicipios.cod++;
+	}
+
+	public int getPoblacionEstado() {
+		return poblacionEstado;
 	}
 
 	public ArrayList<Municipio> getMunicipios() {
@@ -84,15 +100,21 @@ public class DataSetMunicipios {
 		return mapa;
 	}
 		
+	public int habitantesTotales() {
+		int res = 0;
+		for (Municipio m: municipios) {
+			res = res + m.getHabitantes();
+		}
+		return res;
+	}
 	
-	
-	
-//	public static void main(String[] args) throws IOException {
-//		DataSetMunicipios dataset = new DataSetMunicipios("datasetMunicipios50k.csv");
-//		HashMap<String,ArrayList<String>> mapa = dataset.mapaCCAAprovincias();
-//		for(String auto: mapa.keySet()) {
-//			System.out.println(auto + mapa.get(auto));
-//		}
-//	}
+	public int habitantesProvincia(String provincia) {
+		int res = 0;
+		for (String nombreMun: this.mapaProvinciasMunis().get(provincia)) {
+			Municipio muni = this.mapaBusquedaMunis().get(nombreMun);
+			res = res + muni.getHabitantes();
+		}
+		return res;
+	}
 	
 }
