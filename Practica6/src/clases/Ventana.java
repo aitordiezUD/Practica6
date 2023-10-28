@@ -59,7 +59,7 @@ public class Ventana extends JFrame{
 	private JTree arbol;
 	private DefaultTreeModel modeloArbol;
 	private JPanel pnlJTree;
-	private PnlVisualizacion2 pnlVisualizacion;
+	private PnlVisualizacion pnlVisualizacion;
 	private JPanel contentPanel;
 	private JPanel pnlBtns;
 	private JPanel pnlSuperior;
@@ -79,6 +79,19 @@ public class Ventana extends JFrame{
 	*/	
 	private int contInserc=0;
 
+	/*NOTAS:
+	 * Para el panel de visualización he decidido implementarlo en un JScrollPane donde se puede hacer Zoom In (Click izquierdo en el panel)
+	 * y Zoom Out (click derecho encima del panel). He decidido hacer esto para que además de las líneas separatorias mencionadas, al lado 
+	 * de estas líneas también se vean los nombres de cada municipio. Entonces si los municipios eran muy pequeños los nombres se solapaban entre ellos.
+	 * Viene un Zoom por defecto de x10. El zoom máximo será x10 y mínimo x1.
+	 *
+	 *El label superior mencionado en la entrega lo he dejado vacío todo el rato ya que no se especifica que se debe de hacer con él. 
+	 * 
+	 *Para la implementación de la interfaz Scrollable en me he basado en StackOverflow:
+	 *Link StackOveflow: https://stackoverflow.com/questions/34889088/how-to-implement-graphics-to-jscrollpane
+	 *  
+	 */
+	
 	
 	
 //	Atributos necesarios para el listener del click derecho
@@ -104,8 +117,7 @@ public class Ventana extends JFrame{
 		pnlSuperior = new JPanel();
 		pnlSuperior.setPreferredSize(new Dimension(1200,30));
 		pnlSuperior.setLayout(new FlowLayout());
-		pnlSuperior.setBackground(Color.LIGHT_GRAY);
-		lblSup = new JLabel("label superior");
+		lblSup = new JLabel("");
 		pnlSuperior.add(lblSup);
 		contentPanel.add(pnlSuperior, BorderLayout.NORTH);
 
@@ -148,7 +160,6 @@ public class Ventana extends JFrame{
 		pnlBtns = new JPanel();
 		pnlBtns.setLayout(new FlowLayout());
 		pnlBtns.setPreferredSize(new Dimension(1200,50));
-		pnlBtns.setBackground(Color.cyan);
 		
 		btnEliminar = new JButton("Eliminar");
 		btnEliminar.addActionListener(new ActionListener() {
@@ -244,7 +255,6 @@ public class Ventana extends JFrame{
                 	nMuniSel = "";
                 	clickDerecho = false;
                 	pnlVisualizacion.setProvincia(provincia.toString());
-                	System.out.println("Nuevo valor en provincia: " + provincia.toString());
                 	pnlVisualizacion.repaint();
                 	tabla.repaint();
                 }
@@ -264,7 +274,7 @@ public class Ventana extends JFrame{
 		
 //		Creacion panel visualizacion
 
-		pnlVisualizacion= new PnlVisualizacion2(datosMunis);
+		pnlVisualizacion= new PnlVisualizacion(datosMunis);
 		JScrollPane jsp = new JScrollPane(pnlVisualizacion);
 		jsp.setPreferredSize(new Dimension(280,600));
 		
@@ -357,26 +367,19 @@ public class Ventana extends JFrame{
 					int col = tabla.columnAtPoint(e.getPoint());
 					int fila = tabla.rowAtPoint(e.getPoint());
 					if (col == COL_MUNICIPIO && fila >= 0) {
-//						System.out.println("Columna: "+ col + "; Fila: " + fila);
 						String muni = (String) tabla.getValueAt(fila, col);
-//						System.out.println("Click derecho en col Municipio");
 						if (clickDerecho == false) {
 							nMuniSel = muni;
-//							System.out.println("Ciudad seleccionada: " + nMuniSel);
 							muniSel = mapaBusquedaMunis.get(muni);
-//							System.out.println("Municipio seleccionado: " + muniSel);
 							clickDerecho = true;
 						}else {
 							if (muni == nMuniSel) {
 								nMuniSel = "";
 								muniSel = null;
 								clickDerecho = false;
-//								System.out.println("Municipio sin seleccionar " + nMuniSel);
 							}else {
 								nMuniSel = muni;
-//								System.out.println("Ciudad seleccionada: " + nMuniSel);
 								muniSel = mapaBusquedaMunis.get(muni);
-//								System.out.println("Municipio seleccionado: " + muniSel);
 								clickDerecho = true;
 								
 							}
@@ -505,7 +508,8 @@ public class Ventana extends JFrame{
 		return nodo1;
 	}
 	
-	private static class PnlVisualizacion2 extends JPanel implements Scrollable{
+	private static class PnlVisualizacion extends JPanel implements Scrollable{
+		private static final long serialVersionUID = 1L;
 		private final int WIDTH_BARRA = 50;
 		private final int MIN_HEIGHT_BARRA = 500;
 		private final int POBLACION_ESTADO;
@@ -527,16 +531,13 @@ public class Ventana extends JFrame{
             return new Dimension(280, 128);
         }
 		
-		
-		public String getProvincia() {
-			return provincia;
-		}
+	
 
 		public void setProvincia(String provincia) {
 			this.provincia = provincia;
 		}
 
-		private PnlVisualizacion2(DataSetMunicipios dataset){
+		private PnlVisualizacion(DataSetMunicipios dataset){
 			this.dataset=dataset;
 			POBLACION_ESTADO = dataset.getPoblacionEstado();
 			setBorder(new LineBorder(Color.BLACK, 1));
@@ -546,10 +547,10 @@ public class Ventana extends JFrame{
 	            public void mouseClicked(MouseEvent e) {
 	                if (e.getButton() == MouseEvent.BUTTON1) {
 	                    incZoomLevel();
-	                    PnlVisualizacion2.this.repaint();
+	                    PnlVisualizacion.this.repaint();
 	                } else if (e.getButton() == MouseEvent.BUTTON3) {
 	                    decZoomLevel();
-	                    PnlVisualizacion2.this.repaint();
+	                    PnlVisualizacion.this.repaint();
 	                }
 	            }
 	        });
@@ -574,16 +575,16 @@ public class Ventana extends JFrame{
 			super.paintComponent(g);
 			if (!provincia.equals("")) {
 				crearListaBarras();
-
 				heightAnterior = 0;
 				
-//				Pintar la barra de habitantes totales del estado con un String encima de la barra
 				g.setColor(Color.cyan);
 				g.fillRect(200, preferredY-MIN_HEIGHT_BARRA*zoomLevel, WIDTH_BARRA, MIN_HEIGHT_BARRA*zoomLevel);
 				g.setColor(Color.BLACK);
 				g.drawString("Estado",200,preferredY-MIN_HEIGHT_BARRA*zoomLevel-30);
 				for (barraVis bv: listaBarras) {
-					int height = bv.getDefaultHeight()*zoomLevel;//!!!!!!!!!!!!!!!!!!!!! Quitar el 50
+					
+					double heightD = (MIN_HEIGHT_BARRA*bv.muni.getHabitantes())/POBLACION_ESTADO;
+					int height = (int) heightD*zoomLevel;
 					int y = preferredY-height-heightAnterior;
 					
 					g.setColor(bv.getColorBarra());
@@ -616,15 +617,17 @@ public class Ventana extends JFrame{
 		        int blue = rand.nextInt(256);
 		        poblacionProvincia = poblacionProvincia + muni.getHabitantes();
 				int heightBarra = (500*muni.getHabitantes())/POBLACION_ESTADO;
-				barraVis bv = new barraVis(muni,new Color(red,green,blue),heightBarra);				
+				barraVis bv = new barraVis(muni,new Color(red,green,blue));				
 				listaBarras2.add(bv);
 			}
+
 			if (!listaBarras2.equals(listaBarras)) {
 				listaBarras = listaBarras2;
 			}
 		}
 
-
+		
+		
 		@Override
 		public Dimension getPreferredScrollableViewportSize() {
 			// TODO Auto-generated method stub
@@ -663,23 +666,27 @@ public class Ventana extends JFrame{
 	}
 	
 	private static class barraVis{
+		
 		private Municipio muni;
 		private Color colorBarra;
-		private int defaultHeight;
+		
 		public Municipio getMuni() {
 			return muni;
 		}
 		public Color getColorBarra() {
 			return colorBarra;
 		}
-		public int getDefaultHeight() {
-			return defaultHeight;
-		}
-		public barraVis(Municipio muni, Color colorBarra, int defaultHeight) {
+
+		public barraVis(Municipio muni, Color colorBarra) {
 			this.muni = muni;
 			this.colorBarra = colorBarra;
-			this.defaultHeight = defaultHeight;
 		}
+		
+		@Override
+		public String toString() {
+			return "barraVis [muni=" + muni + "]";
+		}
+		
 		@Override
 		public boolean equals(Object obj) {
 		    if (this == obj) {
