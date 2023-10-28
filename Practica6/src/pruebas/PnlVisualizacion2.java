@@ -102,9 +102,9 @@ public class PnlVisualizacion2 extends JPanel{
 //			System.out.println("Barra " + cont + " " + y);
 			cont++;
 		}
-		System.out.println(provincia);
-		System.out.println("Height anterior para dibujar String de la provincia: " + heightAnterior);
-		g.drawString(provincia, 20, 600-heightAnterior-30);
+//		System.out.println(provincia);
+//		System.out.println("Height anterior para dibujar String de la provincia: " + heightAnterior);
+//		g.drawString(provincia, 20, 600-heightAnterior-30);
 	}
 	
 	public static void main(String[] args) throws IOException {

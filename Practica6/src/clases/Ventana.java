@@ -5,6 +5,8 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Random;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -26,6 +29,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
+import javax.swing.Scrollable;
+import javax.swing.border.LineBorder;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -35,6 +40,10 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+
+
+
+
 
 enum ORDEN{
 	Alfabetico,
@@ -50,7 +59,7 @@ public class Ventana extends JFrame{
 	private JTree arbol;
 	private DefaultTreeModel modeloArbol;
 	private JPanel pnlJTree;
-	private PnlVisualizacion pnlVisualizacion;
+	private PnlVisualizacion2 pnlVisualizacion;
 	private JPanel contentPanel;
 	private JPanel pnlBtns;
 	private JPanel pnlSuperior;
@@ -72,15 +81,11 @@ public class Ventana extends JFrame{
 
 	
 	
-//	private String provinciaVisualizacion = "";
-	
 //	Atributos necesarios para el listener del click derecho
 	private String nMuniSel = "";
 	private Boolean clickDerecho = false;
 	private Municipio muniSel;
-	
-//	Atributos implementacion INSERCION
-	
+		
 	public Ventana (JFrame ventanaOrigen) {
 		setSize(1200,720);
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -127,7 +132,6 @@ public class Ventana extends JFrame{
 				DefaultMutableTreeNode nodo = (DefaultMutableTreeNode) value;
 				
 				if(leaf) {
-//					System.out.println("Leaf");
 					panel.setLayout(new BorderLayout());
 					int habitantes = datosMunis.habitantesProvincia(nodo.getUserObject().toString());
 					pb.setValue(habitantes);
@@ -195,8 +199,8 @@ public class Ventana extends JFrame{
 			public void actionPerformed(ActionEvent e) {
 				String nombreMuni = "Nombre-"+contInserc;
 				contInserc++;
-				Municipio muni = new Municipio(DataSetMunicipios.getCod(),nombreMuni,500000,autonomiaSel,provinciaSel);
-				Object[] fila = {DataSetMunicipios.getCod(),nombreMuni,500000,500000,autonomiaSel,provinciaSel};
+				Municipio muni = new Municipio(DataSetMunicipios.getCod(),nombreMuni,50000,autonomiaSel,provinciaSel);
+				Object[] fila = {DataSetMunicipios.getCod(),nombreMuni,50000,50000,autonomiaSel,provinciaSel};
 				modeloTabla.addRow(fila);
 				mapaBusquedaMunis.put(nombreMuni, muni);
 				datosMunis.getMunicipios().add(muni);
@@ -259,10 +263,13 @@ public class Ventana extends JFrame{
 		
 		
 //		Creacion panel visualizacion
-		pnlVisualizacion = new PnlVisualizacion(datosMunis);
-		pnlVisualizacion.setPreferredSize(new Dimension(280,600));
-		contentPanel.add(pnlVisualizacion, BorderLayout.EAST);
+
+		pnlVisualizacion= new PnlVisualizacion2(datosMunis);
+		JScrollPane jsp = new JScrollPane(pnlVisualizacion);
+		jsp.setPreferredSize(new Dimension(280,600));
 		
+
+		contentPanel.add(jsp,BorderLayout.EAST);
 		
 //		Creacion de los mapas de búsqueda
 		mapaBusquedaMunis = datosMunis.mapaBusquedaMunis();
@@ -494,13 +501,200 @@ public class Ventana extends JFrame{
 	
 	private DefaultMutableTreeNode crearNodo( Object dato, DefaultMutableTreeNode nodoPadre, int posi ) {
 		DefaultMutableTreeNode nodo1 = new DefaultMutableTreeNode( dato );
-		// raiz.add(nodo1);  -- atención, si lo hacemos así el modelo no se entera y no se refresca
-		// En ese caso habría que informar explícitamente al modelo del árbol que se ha insertado un nodo, refrescando así la GUI
-		// modeloArbol.nodesWereInserted( raiz, new int[] { raiz.getChildCount()-1 } );
-		modeloArbol.insertNodeInto( nodo1, nodoPadre, posi ); // Este método hace las dos cosas: inserta y notifica a los escuchadores del modelo
-//		tree.expandir( new TreePath(nodo1.getPath()), true );
+		modeloArbol.insertNodeInto( nodo1, nodoPadre, posi );
 		return nodo1;
 	}
 	
+	private static class PnlVisualizacion2 extends JPanel implements Scrollable{
+		private final int WIDTH_BARRA = 50;
+		private final int MIN_HEIGHT_BARRA = 500;
+		private final int POBLACION_ESTADO;
+		
+		private String provincia="";
+		private static int zoomLevel = 10;
+		private int preferredY = 80+MIN_HEIGHT_BARRA*zoomLevel; 
+		private DataSetMunicipios dataset;
+		private ArrayList<barraVis> listaBarras;
+		private int heightAnterior = 0;
+		
+		@Override
+        public Dimension getPreferredSize() {
+            return new Dimension(280, preferredY);
+        }
+
+        @Override
+        public Dimension getMinimumSize() {
+            return new Dimension(280, 128);
+        }
+		
+		
+		public String getProvincia() {
+			return provincia;
+		}
+
+		public void setProvincia(String provincia) {
+			this.provincia = provincia;
+		}
+
+		private PnlVisualizacion2(DataSetMunicipios dataset){
+			this.dataset=dataset;
+			POBLACION_ESTADO = dataset.getPoblacionEstado();
+			setBorder(new LineBorder(Color.BLACK, 1));
+			
+			addMouseListener(new MouseAdapter() {
+	            @Override
+	            public void mouseClicked(MouseEvent e) {
+	                if (e.getButton() == MouseEvent.BUTTON1) {
+	                    incZoomLevel();
+	                    PnlVisualizacion2.this.repaint();
+	                } else if (e.getButton() == MouseEvent.BUTTON3) {
+	                    decZoomLevel();
+	                    PnlVisualizacion2.this.repaint();
+	                }
+	            }
+	        });
+		}
+		
+
+		public static void incZoomLevel() {
+	        if (zoomLevel<10) {
+	        	zoomLevel++;
+	        }
+	    }
+		public static void decZoomLevel() {
+	        if (zoomLevel>1) {
+	        	zoomLevel--;
+	        }
+	    }
+		
+		
+		@Override
+		protected void paintComponent(Graphics g) {
+			// TODO Auto-generated method stub
+			super.paintComponent(g);
+			if (!provincia.equals("")) {
+				crearListaBarras();
+
+				heightAnterior = 0;
+				
+//				Pintar la barra de habitantes totales del estado con un String encima de la barra
+				g.setColor(Color.cyan);
+				g.fillRect(200, preferredY-MIN_HEIGHT_BARRA*zoomLevel, WIDTH_BARRA, MIN_HEIGHT_BARRA*zoomLevel);
+				g.setColor(Color.BLACK);
+				g.drawString("Estado",200,preferredY-MIN_HEIGHT_BARRA*zoomLevel-30);
+				for (barraVis bv: listaBarras) {
+					int height = bv.getDefaultHeight()*zoomLevel;//!!!!!!!!!!!!!!!!!!!!! Quitar el 50
+					int y = preferredY-height-heightAnterior;
+					
+					g.setColor(bv.getColorBarra());
+					g.fillRect(20, y, 50, height);
+					
+					g.setColor(Color.black);
+					g.drawLine(20, y, 70, y);
+					
+					g.drawString(bv.getMuni().getNombre(), 73, y);
+					
+					heightAnterior = height+heightAnterior;
+				}
+				g.drawString(provincia, 20, preferredY-heightAnterior-30);
+			}
+			
+		}
+		
+		
+		public void crearListaBarras() {
+			int poblacionProvincia = 0;
+			ArrayList<barraVis> listaBarras2 = new ArrayList<barraVis>();
+			HashMap<String,Municipio> mapaBusquedaMunis = dataset.mapaBusquedaMunis();
+			HashMap<String,ArrayList<String>> mapaProvinciasMunis = dataset.mapaProvinciasMunis();
+			for (String m: mapaProvinciasMunis.get(provincia)) {
+				
+				Municipio muni = mapaBusquedaMunis.get(m);
+				Random rand = new Random();
+		        int red = rand.nextInt(256); 
+		        int green = rand.nextInt(256); 
+		        int blue = rand.nextInt(256);
+		        poblacionProvincia = poblacionProvincia + muni.getHabitantes();
+				int heightBarra = (500*muni.getHabitantes())/POBLACION_ESTADO;
+				barraVis bv = new barraVis(muni,new Color(red,green,blue),heightBarra);				
+				listaBarras2.add(bv);
+			}
+			if (!listaBarras2.equals(listaBarras)) {
+				listaBarras = listaBarras2;
+			}
+		}
+
+
+		@Override
+		public Dimension getPreferredScrollableViewportSize() {
+			// TODO Auto-generated method stub
+			return new Dimension(280,preferredY);
+		}
+
+
+		@Override
+		public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+			// TODO Auto-generated method stub
+			return 128;
+		}
+
+
+		@Override
+		public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+			// TODO Auto-generated method stub
+			return 128;
+		}
+
+
+		@Override
+		public boolean getScrollableTracksViewportWidth() {
+			// TODO Auto-generated method stub
+			return getPreferredSize().width
+                    <= getParent().getSize().width;
+		}
+
+
+		@Override
+		public boolean getScrollableTracksViewportHeight() {
+			// TODO Auto-generated method stub
+			return getPreferredSize().height
+                    <= getParent().getSize().height;
+		}
+	}
 	
+	private static class barraVis{
+		private Municipio muni;
+		private Color colorBarra;
+		private int defaultHeight;
+		public Municipio getMuni() {
+			return muni;
+		}
+		public Color getColorBarra() {
+			return colorBarra;
+		}
+		public int getDefaultHeight() {
+			return defaultHeight;
+		}
+		public barraVis(Municipio muni, Color colorBarra, int defaultHeight) {
+			this.muni = muni;
+			this.colorBarra = colorBarra;
+			this.defaultHeight = defaultHeight;
+		}
+		@Override
+		public boolean equals(Object obj) {
+		    if (this == obj) {
+		        return true;  // Si es la misma instancia, son iguales
+		    }
+		    if (obj == null || getClass() != obj.getClass()) {
+		        return false;  // Si el objeto es nulo o no es de la misma clase, no son iguales
+		    }
+		    
+		    // Convierte el objeto pasado en el mismo tipo que esta instancia
+		    barraVis other = (barraVis) obj;
+		    
+		    // Realiza la comparación de los dos atributos específicos
+		    return muni.equals(other.muni);
+		}
+		
+	}
 }

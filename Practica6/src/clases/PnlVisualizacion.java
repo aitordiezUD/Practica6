@@ -1,5 +1,15 @@
 package clases;
 
+//
+//public PnlVisualizacion2(DataSetMunicipios dataset){
+//	this.dataset=dataset;
+//	POBLACION_ESTADO = dataset.getPoblacionEstado();
+//	System.out.println("Poblacion estado: " + POBLACION_ESTADO);
+//	setSize(280,defaultYdimension);
+//	setBorder(new LineBorder(Color.BLACK, 1));
+//	setPreferredSize(new Dimension(280,defaultYdimension));
+//}
+
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -62,9 +72,6 @@ public class PnlVisualizacion extends JPanel{
 		setSize(280,defaultYdimension);
 		setBorder(new LineBorder(Color.BLACK, 1));
 		setPreferredSize(new Dimension(280,defaultYdimension));
-		
-		
-
 	}
 	
 

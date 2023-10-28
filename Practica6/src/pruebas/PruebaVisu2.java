@@ -3,37 +3,20 @@ package pruebas;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
 import java.util.Map;
-import java.util.Random;
 import java.util.TreeMap;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.Scrollable;
 
+import javax.swing.*;
 
-// Link StackOveflow: https://stackoverflow.com/questions/34889088/how-to-implement-graphics-to-jscrollpane
+import pruebas.Main.Graph;
 
-public class Main {
-
-    public static void main(String[] args) {
-        EventQueue.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new Main();
-            }
-        });
-    }
-
-    public Main() {
-        // For this example, I just randomised some data, you would
-        // Need to load it yourself...
-        int width = 256;
+public class PruebaVisu2 {
+	public static void main(String[] args) {
+		int width = 256;
         int height = 256;
         int[][] data = new int[width][height];
         for (int c = 0; c < height; c++) {
@@ -55,18 +38,23 @@ public class Main {
                 mapHistory.put(value, amount);
             }
         }
-        JFrame frame = new JFrame("Test");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new BorderLayout());
-        frame.add(new JScrollPane(new Graph(mapHistory)));
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-    }
+        
+        
+		
+		JFrame f = new JFrame();
+		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		f.setSize(512,296);
+		JPanel pAux = new JPanel();
+		pAux.setPreferredSize(new Dimension(300,256));
+		pAux.setBackground(Color.cyan);
+		f.getContentPane().add(pAux,BorderLayout.WEST);
+		f.getContentPane().add(new JScrollPane(new Graph(mapHistory)));
+		f.setVisible(true);
+	}
+	
+	protected static class Graph extends JPanel implements Scrollable {
 
-    protected class Graph extends JPanel implements Scrollable {
-
-        protected static final int MIN_BAR_WIDTH = 20;
+        protected static final int MIN_BAR_WIDTH = 4;
         private Map<Integer, Integer> mapHistory;
 
         public Graph(Map<Integer, Integer> mapHistory) {
@@ -109,15 +97,7 @@ public class Main {
                     int value = mapHistory.get(key);
                     int barHeight = Math.round(((float) value
                                     / (float) maxValue) * height);
-//                    g2d.setColor(new Color(key, key, key));
-                    Random rand = new Random();
-                    int red = rand.nextInt(256); 
-    		        int green = rand.nextInt(256); 
-    		        int blue = rand.nextInt(256); 
-    				
-    				g2d.setColor(new Color(red, green, blue));
-                    
-                    
+                    g2d.setColor(new Color(key, key, key));
                     int yPos = height + yOffset - barHeight;
                     Rectangle2D bar = new Rectangle2D.Float(
                                     xPos, yPos, barWidth, barHeight);

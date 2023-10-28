@@ -17,7 +17,7 @@ import clases.PnlVisualizacion;
 
 public class MainFrame extends JFrame {
 
-    private PnlVisualizacion2 pnlVisualizacion;
+    private PnlVisualizacion pnlVisualizacion;
     private JSlider zoomSlider;
     private JScrollPane scrollPane;
     
@@ -27,7 +27,7 @@ public class MainFrame extends JFrame {
 		String provincia = "Islas Baleares";
     	
     	// Inicializa tu panel de visualización y otros componentes
-        pnlVisualizacion = new PnlVisualizacion2(dataset,provincia);
+        pnlVisualizacion = new PnlVisualizacion(dataset,provincia);
         zoomSlider = new JSlider(JSlider.HORIZONTAL, 1, 10, 1);
         scrollPane = new JScrollPane(pnlVisualizacion);
 
